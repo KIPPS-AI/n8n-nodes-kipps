@@ -1,8 +1,8 @@
-
 import {
-	IAuthenticateGeneric,
 	ICredentialType,
 	INodeProperties,
+	IAuthenticateGeneric,
+	ICredentialTestRequest,
 } from 'n8n-workflow';
 
 export class KippsAiApi implements ICredentialType {
@@ -18,8 +18,8 @@ export class KippsAiApi implements ICredentialType {
 				password: true,
 			},
 			default: '',
-			placeholder: 'Your API ID',
-			description: 'The API ID for your Kipps.AI account',
+			placeholder: 'Your API Key',
+			description: 'The API key for your Kipps.AI account.',
 		},
 	];
 	authenticate: IAuthenticateGeneric = {
@@ -28,6 +28,13 @@ export class KippsAiApi implements ICredentialType {
 			headers: {
 				'Authorization': '=Bearer {{$credentials.apiKey}}',
 			},
+		},
+	};
+
+	test: ICredentialTestRequest = {
+		request: {
+			baseURL: 'https://api.kipps.ai/',
+			url: '',
 		},
 	};
 }
