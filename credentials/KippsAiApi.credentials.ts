@@ -33,7 +33,7 @@ export class KippsAiApi implements ICredentialType {
 
 	test: ICredentialTestRequest = {
 		request: {
-			url: 'https://api.kipps.ai/',
+			url: 'https://backend.kipps.ai/',
 		},
 	};
 }

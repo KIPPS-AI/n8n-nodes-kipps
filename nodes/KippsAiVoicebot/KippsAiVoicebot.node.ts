@@ -12,7 +12,7 @@ export class KippsAiVoicebot implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Kipps.AI Voicebot',
 		name: 'kippsAiVoicebot',
-		icon: 'file:../microphone.svg',
+		icon: { light: 'file:../microphone.svg', dark: 'file:../microphone.svg' },
 		group: ['transform'],
 		version: 1,
 		description: 'Manage and interact with a Kipps.AI Voicebot for handling calls.',
@@ -192,14 +192,14 @@ export class KippsAiVoicebot implements INodeType {
 				}
 
 				const headers = { 'Content-Type': 'application/json' };
-				const response = await this.helpers.httpRequest({
+				const response = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
 					method,
 					url: endpoint,
 					body,
 					headers,
 				});
 
-				returnData.push({ json: { response, debug: { body, headers, endpoint, method } } });
+				returnData.push({ json: { response, debug: { body, headers, endpoint, method } }, pairedItem: itemIndex });
 			} catch (error) {
 				let debugInfo: any = { error: error.message, errorDetails: error };
 				if (error.response) {

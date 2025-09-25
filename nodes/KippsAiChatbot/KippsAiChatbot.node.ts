@@ -11,7 +11,7 @@ export class KippsAiChatbot implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Kipps.AI Chatbot',
 		name: 'kippsAiChatbot',
-		icon: 'file:../chat.svg',
+		icon: { light: 'file:../chat.svg', dark: 'file:../chat.svg' },
 		group: ['transform'],
 		version: 1,
 		description: 'Interact with a Kipps.AI Chatbot to send and receive messages.',
@@ -69,7 +69,7 @@ export class KippsAiChatbot implements INodeType {
 				let session = this.getNodeParameter('session', itemIndex, '') as string;
 
 				if (!session) {
-					const convRes = await this.helpers.httpRequest({
+					const convRes = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
 						method: 'POST',
 						url: 'https://backend.kipps.ai/v2/kipps/conversation/',
 						body: { chatbot_id: agentId },
@@ -84,14 +84,14 @@ export class KippsAiChatbot implements INodeType {
 					conversation_id: session,
 				};
 
-				const response = await this.helpers.httpRequest({
+				const response = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
 					method: 'POST',
 					url: 'https://backend.kipps.ai/v2/kipps/reply/',
 					body,
 					headers,
 				});
 
-				returnData.push({ json: response });
+				returnData.push({ json: response, pairedItem: itemIndex });
 
 		   } catch (error) {
 			   if (this.continueOnFail()) {
