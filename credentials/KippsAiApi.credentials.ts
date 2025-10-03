@@ -26,14 +26,14 @@ export class KippsAiApi implements ICredentialType {
 		type: 'generic',
 		properties: {
 			headers: {
-				'Authorization': '=Bearer {{$credentials.apiKey}}',
+				'Authorization': '=Api-Key {{$credentials.apiKey}}',
 			},
 		},
 	};
 
 	test: ICredentialTestRequest = {
 		request: {
-			url: 'https://backend.kipps.ai/',
+			url: 'https://backend.kipps.ai/test/',
 		},
 	};
 }

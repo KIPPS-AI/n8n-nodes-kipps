@@ -12,7 +12,7 @@ export class KippsAiVoicebot implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Kipps.AI Voicebot',
 		name: 'kippsAiVoicebot',
-		icon: { light: 'file:../microphone.svg', dark: 'file:../microphone.svg' },
+		icon: { light: 'file:../microphone-light.svg', dark: 'file:../microphone-dark.svg' },
 		group: ['transform'],
 		version: 1,
 		description: 'Manage and interact with a Kipps.AI Voicebot for handling calls.',

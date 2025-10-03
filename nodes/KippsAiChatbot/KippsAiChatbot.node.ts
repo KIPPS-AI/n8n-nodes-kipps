@@ -11,7 +11,7 @@ export class KippsAiChatbot implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Kipps.AI Chatbot',
 		name: 'kippsAiChatbot',
-		icon: { light: 'file:../chat.svg', dark: 'file:../chat.svg' },
+		icon: { light: 'file:../chat-light.svg', dark: 'file:../chat-dark.svg' },
 		group: ['transform'],
 		version: 1,
 		description: 'Interact with a Kipps.AI Chatbot to send and receive messages.',
