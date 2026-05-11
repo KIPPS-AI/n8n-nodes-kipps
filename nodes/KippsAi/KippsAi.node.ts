@@ -53,7 +53,7 @@ export class KippsAi implements INodeType {
 			return (await getTemplatesCached(cache, cacheKey, async () => {
 				const res = await ctx.helpers.httpRequestWithAuthentication.call(ctx, 'kippsAiApi', {
 					method: 'GET',
-					url: 'https://backend.kipps.ai/integrations/whatsapp-templates-sync/',
+					url: 'https://backend.kipps.ai/integrations/get-whatsapp-templates/',
 				});
 				const list = Array.isArray(res) ? res : [];
 				return list.filter((t) => (t as { status?: string }).status === 'APPROVED');
@@ -198,7 +198,7 @@ export class KippsAi implements INodeType {
 								required: true,
 								display: true,
 								type: 'string',
-							});
+															});
 						}
 					}
 
@@ -365,7 +365,7 @@ export class KippsAi implements INodeType {
 						mode: 'map',
 						resourceMapperMethod: 'getTemplateFields',
 						supportAutoMap: false,
-					},
+											},
 				},
 				displayOptions: { show: { agentType: ['whatsapp'] } },
 			},
@@ -415,7 +415,7 @@ export class KippsAi implements INodeType {
 				whatsappTemplates = await getTemplatesCached(templatesCacheRun, cacheKey, async () => {
 					const res = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
 						method: 'GET',
-						url: 'https://backend.kipps.ai/integrations/whatsapp-templates-sync/',
+						url: 'https://backend.kipps.ai/integrations/get-whatsapp-templates/',
 					});
 					const list = Array.isArray(res) ? res : [];
 					return list.filter((t) => (t as { status?: string }).status === 'APPROVED');
