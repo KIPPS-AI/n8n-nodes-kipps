@@ -258,7 +258,7 @@ export class KippsAi implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Kipps.AI',
 		name: 'kippsAi',
-		icon: { light: 'file:kipps-light.png', dark: 'file:kipps-dark.png' },
+		icon: { light: 'file:kipps-light.svg', dark: 'file:kipps-dark.svg' },
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["agentType"]}}',
