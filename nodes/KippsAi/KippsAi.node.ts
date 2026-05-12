@@ -333,7 +333,7 @@ export class KippsAi implements INodeType {
 				name: 'voicebotId',
 				type: 'string',
 				default: '',
-				placeholder: 'example-voicebot-id',
+				placeholder: 'example-voicebot-ID',
 				description: 'ID of the Kipps.AI voicebot used to start the call',
 				required: true,
 				displayOptions: { show: { agentType: ['voiceAgent'] } },
@@ -395,7 +395,7 @@ export class KippsAi implements INodeType {
 				displayOptions: { show: { agentType: ['whatsapp'] } },
 			},
 			{
-				displayName: 'Template Components Preview',
+				displayName: 'Template Components Preview Name or ID',
 				name: 'templateComponentsPreview',
 				type: 'options',
 				default: '',
