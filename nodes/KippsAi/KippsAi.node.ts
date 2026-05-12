@@ -75,19 +75,31 @@ export class KippsAi implements INodeType {
 				): Promise<INodePropertyOptions[]> {
 					const templateName = this.getCurrentNodeParameter('templateName') as string;
 					if (!templateName) {
-						return [{ name: 'Select a Template Above to See Its Components.', value: 'no_template' }];
+						return [
+							{ name: 'Select a Template Above to See Its Components.', value: 'no_template' },
+						];
 					}
 
 					let templates: Array<{ name?: string; components?: unknown }>;
 					try {
 						templates = await fetchApprovedTemplates(this, templatesCacheUi);
 					} catch {
-						return [{ name: 'The Selected Template Could Not Be Read. Please Select It Again.', value: 'invalid_template' }];
+						return [
+							{
+								name: 'The Selected Template Could Not Be Read. Please Select It Again.',
+								value: 'invalid_template',
+							},
+						];
 					}
 
 					const template = templates.find((t) => String(t.name) === templateName);
 					if (!template) {
-						return [{ name: 'The Selected Template Could Not Be Found. Please Select It Again.', value: 'template_not_found' }];
+						return [
+							{
+								name: 'The Selected Template Could Not Be Found. Please Select It Again.',
+								value: 'template_not_found',
+							},
+						];
 					}
 
 					const components = Array.isArray(template.components) ? template.components : [];
@@ -97,21 +109,41 @@ export class KippsAi implements INodeType {
 
 					const options: INodePropertyOptions[] = [];
 					components.forEach(
-						(c: { type?: string; text?: string; format?: string; buttons?: Array<{ text?: string }> }, index: number) => {
+						(
+							c: {
+								type?: string;
+								text?: string;
+								format?: string;
+								buttons?: Array<{ text?: string }>;
+							},
+							index: number,
+						) => {
 							const type = c?.type ?? 'UNKNOWN';
 							if (type === 'BODY') {
 								const text: string = c.text ?? '';
 								const short = text.length > 100 ? `${text.slice(0, 97)}…` : text;
-								options.push({ name: `${index + 1}. BODY – ${short || 'No body text'}`, value: `BODY_${index}` });
+								options.push({
+									name: `${index + 1}. BODY – ${short || 'No body text'}`,
+									value: `BODY_${index}`,
+								});
 							} else if (type === 'HEADER') {
 								const format = c?.format ?? 'TEXT';
 								const text: string = c.text ?? '';
 								const short = text.length > 80 ? `${text.slice(0, 77)}…` : text;
-								options.push({ name: `${index + 1}. HEADER (${format})${short ? ` – ${short}` : ''}`, value: `HEADER_${index}` });
+								options.push({
+									name: `${index + 1}. HEADER (${format})${short ? ` – ${short}` : ''}`,
+									value: `HEADER_${index}`,
+								});
 							} else if (type === 'BUTTONS') {
 								const buttons = Array.isArray(c.buttons) ? c.buttons : [];
-								const labels = buttons.map((b) => b.text).filter((t): t is string => !!t).join(', ');
-								options.push({ name: `${index + 1}. BUTTONS – ${labels || 'No button labels'}`, value: `BUTTONS_${index}` });
+								const labels = buttons
+									.map((b) => b.text)
+									.filter((t): t is string => !!t)
+									.join(', ');
+								options.push({
+									name: `${index + 1}. BUTTONS – ${labels || 'No button labels'}`,
+									value: `BUTTONS_${index}`,
+								});
 							} else {
 								options.push({ name: `${index + 1}. ${type}`, value: `${type}_${index}` });
 							}
@@ -149,13 +181,15 @@ export class KippsAi implements INodeType {
 
 					if (!template) return { fields: [] };
 
-					const body = template.components?.find((c) => c.type === 'BODY') as {
-						text?: string;
-						example?: {
-							body_text_named_params?: Array<{ param_name?: string; example?: string }>;
-							body_text?: string[][];
-						};
-					} | undefined;
+					const body = template.components?.find((c) => c.type === 'BODY') as
+						| {
+								text?: string;
+								example?: {
+									body_text_named_params?: Array<{ param_name?: string; example?: string }>;
+									body_text?: string[][];
+								};
+						  }
+						| undefined;
 
 					if (!body) return { fields: [] };
 
@@ -184,7 +218,9 @@ export class KippsAi implements INodeType {
 							const bodyText = body.text || '';
 							const matches = bodyText.match(/\{\{(\d+)\}\}/g) || [];
 							if (matches.length > 0) {
-								paramCount = Math.max(...matches.map((m: string) => parseInt(m.match(/\d+/)?.[0] ?? '0')));
+								paramCount = Math.max(
+									...matches.map((m: string) => parseInt(m.match(/\d+/)?.[0] ?? '0')),
+								);
 							}
 						}
 
@@ -192,20 +228,23 @@ export class KippsAi implements INodeType {
 							const exampleVal = examples[idx] || '';
 							fields.push({
 								id: `param_${idx}`,
-								displayName: exampleVal ? `Parameter ${idx + 1} (e.g., "${exampleVal}")` : `Parameter ${idx + 1}`,
+								displayName: exampleVal
+									? `Parameter ${idx + 1} (e.g., "${exampleVal}")`
+									: `Parameter ${idx + 1}`,
 								defaultMatch: false,
 								canBeUsedToMatch: false,
 								required: true,
 								display: true,
 								type: 'string',
-															});
+							});
 						}
 					}
 
 					if (fields.length === 0) {
 						return {
 							fields: [],
-							emptyFieldsNotice: 'This template has no parameters to fill. The message will be sent as-is.',
+							emptyFieldsNotice:
+								'This template has no parameters to fill. The message will be sent as-is.',
 						};
 					}
 
@@ -282,7 +321,8 @@ export class KippsAi implements INodeType {
 				type: 'string',
 				default: '',
 				placeholder: 'optional-session-ID',
-				description: 'Optional ID to maintain conversation context. Leave empty to create a new session.',
+				description:
+					'Optional ID to maintain conversation context. Leave empty to create a new session.',
 				displayOptions: { show: { agentType: ['chatbot'] } },
 			},
 
@@ -320,6 +360,16 @@ export class KippsAi implements INodeType {
 
 			// ── WHATSAPP fields ────────────────────────────────────────────────
 			{
+				displayName: 'WhatsApp Agent UUID',
+				name: 'whatsappAgentUuid',
+				type: 'string',
+				required: true,
+				default: '',
+				placeholder: 'a5xxxxx-2cb0-xxx-xxxxxxxxxxx',
+				description: 'WhatsApp agent UUID used to fetch templates',
+				displayOptions: { show: { agentType: ['whatsapp'] } },
+			},
+			{
 				displayName: 'To',
 				name: 'to',
 				type: 'string',
@@ -335,7 +385,8 @@ export class KippsAi implements INodeType {
 				type: 'options',
 				required: true,
 				default: '',
-				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				typeOptions: { loadOptionsMethod: 'getTemplates' },
 				displayOptions: { show: { agentType: ['whatsapp'] } },
 			},
@@ -344,7 +395,8 @@ export class KippsAi implements INodeType {
 				name: 'templateComponentsPreview',
 				type: 'options',
 				default: '',
-				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				typeOptions: {
 					loadOptionsDependsOn: ['templateName'],
 					loadOptionsMethod: 'getTemplateComponentsPreview',
@@ -358,14 +410,15 @@ export class KippsAi implements INodeType {
 				noDataExpression: true,
 				default: { mappingMode: 'defineBelow', value: {} },
 				required: true,
-				description: 'Enter values for template parameters. Fields appear automatically after selecting a template. If they do not appear, click ⋮ → "Refresh fields".',
+				description:
+					'Enter values for template parameters. Fields appear automatically after selecting a template. If they do not appear, click ⋮ → "Refresh fields".',
 				typeOptions: {
 					loadOptionsDependsOn: ['templateName'],
 					resourceMapper: {
 						mode: 'map',
 						resourceMapperMethod: 'getTemplateFields',
 						supportAutoMap: false,
-											},
+					},
 				},
 				displayOptions: { show: { agentType: ['whatsapp'] } },
 			},
@@ -377,13 +430,6 @@ export class KippsAi implements INodeType {
 				default: {},
 				displayOptions: { show: { agentType: ['whatsapp'] } },
 				options: [
-					{
-						displayName: 'Agent UUID',
-						name: 'agent_uuid',
-						type: 'string',
-						default: '',
-						description: 'Optional Agent UUID to associate with the message',
-					},
 					{
 						displayName: 'Conversation ID',
 						name: 'conversation_id',
@@ -437,7 +483,8 @@ export class KippsAi implements INodeType {
 
 					if (!session) {
 						const convRes = await this.helpers.httpRequestWithAuthentication.call(
-							this, 'kippsAiApi',
+							this,
+							'kippsAiApi',
 							{
 								method: 'POST' as IHttpRequestMethods,
 								url: 'https://backend.kipps.ai/v2/kipps/conversation/',
@@ -449,7 +496,8 @@ export class KippsAi implements INodeType {
 					}
 
 					const response = await this.helpers.httpRequestWithAuthentication.call(
-						this, 'kippsAiApi',
+						this,
+						'kippsAiApi',
 						{
 							method: 'POST' as IHttpRequestMethods,
 							url: 'https://backend.kipps.ai/v2/kipps/reply/',
@@ -478,7 +526,8 @@ export class KippsAi implements INodeType {
 					this.logger.debug(`KippsAI VoiceAgent request body: ${JSON.stringify(body)}`);
 
 					const response = await this.helpers.httpRequestWithAuthentication.call(
-						this, 'kippsAiApi',
+						this,
+						'kippsAiApi',
 						{
 							method: 'POST' as IHttpRequestMethods,
 							url: 'https://backend.kipps.ai/speech/phone-call/',
@@ -538,9 +587,7 @@ export class KippsAi implements INodeType {
 						);
 					}
 
-					let parameters:
-						| { body: Array<{ name: string; value: string }> }
-						| { body: string[] };
+					let parameters: { body: Array<{ name: string; value: string }> } | { body: string[] };
 
 					if (template.parameter_format === 'NAMED') {
 						const bodyComp = template.components?.find((c) => c.type === 'BODY');
@@ -571,10 +618,12 @@ export class KippsAi implements INodeType {
 						parameters,
 					};
 					if (additionalFields.agent_uuid) requestBody.agent_uuid = additionalFields.agent_uuid;
-					if (additionalFields.conversation_id) requestBody.conversation_id = additionalFields.conversation_id;
+					if (additionalFields.conversation_id)
+						requestBody.conversation_id = additionalFields.conversation_id;
 
 					const response = await this.helpers.httpRequestWithAuthentication.call(
-						this, 'kippsAiApi',
+						this,
+						'kippsAiApi',
 						{
 							method: 'POST' as IHttpRequestMethods,
 							url: 'https://backend.kipps.ai/integrations/whatsapp-agent/send-template/',
