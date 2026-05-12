@@ -32,8 +32,8 @@ async function getTemplatesCached(
 	return data;
 }
 
-function getTemplatesCacheKey(creds: KippsApiCredentials | undefined): string {
-	return `${creds?.organizationId ?? ''}:${creds?.bearerToken ?? ''}`;
+function getTemplatesCacheKey(creds: KippsApiCredentials | undefined, agentUuid?: string): string {
+	return `${creds?.organizationId ?? ''}:${creds?.bearerToken ?? ''}:${agentUuid ?? ''}`;
 }
 
 // ─── Node Class ───────────────────────────────────────────────────────────────
@@ -49,11 +49,12 @@ export class KippsAi implements INodeType {
 			cache: TemplatesCache,
 		): Promise<Array<{ name?: string; components?: unknown; status?: string }>> {
 			const creds = (await ctx.getCredentials('kippsAiApi')) as KippsApiCredentials | undefined;
-			const cacheKey = getTemplatesCacheKey(creds);
+			const agentUuid = ctx.getCurrentNodeParameter('whatsappAgentUuid') as string;
+			const cacheKey = getTemplatesCacheKey(creds, agentUuid);
 			return (await getTemplatesCached(cache, cacheKey, async () => {
 				const res = await ctx.helpers.httpRequestWithAuthentication.call(ctx, 'kippsAiApi', {
 					method: 'GET',
-					url: 'https://backend.kipps.ai/integrations/get-whatsapp-templates/',
+					url: `https://backend.kipps.ai/integrations/get-whatsapp-templates/?whatsapp_agent_id=${agentUuid}`,
 				});
 				const list = Array.isArray(res) ? res : [];
 				return list.filter((t) => (t as { status?: string }).status === 'APPROVED');
@@ -387,7 +388,10 @@ export class KippsAi implements INodeType {
 				default: '',
 				description:
 					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-				typeOptions: { loadOptionsMethod: 'getTemplates' },
+				typeOptions: {
+					loadOptionsDependsOn: ['whatsappAgentUuid'],
+					loadOptionsMethod: 'getTemplates',
+				},
 				displayOptions: { show: { agentType: ['whatsapp'] } },
 			},
 			{
@@ -398,7 +402,7 @@ export class KippsAi implements INodeType {
 				description:
 					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				typeOptions: {
-					loadOptionsDependsOn: ['templateName'],
+					loadOptionsDependsOn: ['whatsappAgentUuid', 'templateName'],
 					loadOptionsMethod: 'getTemplateComponentsPreview',
 				},
 				displayOptions: { show: { agentType: ['whatsapp'] } },
@@ -413,7 +417,7 @@ export class KippsAi implements INodeType {
 				description:
 					'Enter values for template parameters. Fields appear automatically after selecting a template. If they do not appear, click ⋮ → "Refresh fields".',
 				typeOptions: {
-					loadOptionsDependsOn: ['templateName'],
+					loadOptionsDependsOn: ['whatsappAgentUuid', 'templateName'],
 					resourceMapper: {
 						mode: 'map',
 						resourceMapperMethod: 'getTemplateFields',
@@ -456,12 +460,13 @@ export class KippsAi implements INodeType {
 
 		if (agentType === 'whatsapp') {
 			const creds = (await this.getCredentials('kippsAiApi')) as KippsApiCredentials | undefined;
-			const cacheKey = getTemplatesCacheKey(creds);
+			const agentUuid = this.getNodeParameter('whatsappAgentUuid', 0) as string;
+			const cacheKey = getTemplatesCacheKey(creds, agentUuid);
 			try {
 				whatsappTemplates = await getTemplatesCached(templatesCacheRun, cacheKey, async () => {
 					const res = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
 						method: 'GET',
-						url: 'https://backend.kipps.ai/integrations/get-whatsapp-templates/',
+						url: `https://backend.kipps.ai/integrations/get-whatsapp-templates/?whatsapp_agent_id=${agentUuid}`,
 					});
 					const list = Array.isArray(res) ? res : [];
 					return list.filter((t) => (t as { status?: string }).status === 'APPROVED');
