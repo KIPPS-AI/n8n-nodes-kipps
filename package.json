@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-kipps",
-  "version": "0.0.7",
-  "description": "Custom Kipps.ai integration node for n8n",
+  "version": "1.0.0",
+  "description": "Custom Kipps.ai integration node for n8n — Chatbot, Voice Agent & WhatsApp in one node",
   "keywords": [
     "n8n-community-node-package"
   ],
@@ -36,8 +36,7 @@
       "dist/credentials/KippsAiApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/KippsAiChatbot/KippsAiChatbot.node.js",
-      "dist/nodes/KippsAiVoicebot/KippsAiVoicebot.node.js"
+      "dist/nodes/KippsAi/KippsAi.node.js"
     ]
   },
   "devDependencies": {

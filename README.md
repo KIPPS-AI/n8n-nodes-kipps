@@ -1,148 +1,411 @@
 # n8n Nodes for Kipps.AI
 
-This repository contains n8n nodes for interacting with the Kipps.AI platform. These nodes allow you to integrate your Kipps.AI chatbots and voicebots into your n8n workflows.
+This package provides production-ready custom n8n nodes for integrating with the Kipps.AI platform.
 
-## Nodes
+It supports:
 
-This package includes the following nodes:
+* **Chatbot Agents** — conversational AI workflows
+* **Voice Agents** — outbound/inbound AI voice calls
+* **WhatsApp Agents** — template messaging via WhatsApp Business
 
-- **Kipps.AI Chatbot**: Interact with a Kipps.AI chatbot.
-- **Kipps.AI Voicebot**: Initiate, interact with, and end calls with a Kipps.AI voicebot.
+---
 
-## Installation
+# Features
 
-### Docker
+## Supported Nodes
 
-1.  **Clone this repository:**
-    ```bash
-    git clone https://github.com/KIPPS-AI/n8n-nodes-kipps.git
-    ```
-2.  **Navigate to the cloned directory:**
-    ```bash
-    cd n8n-nodes-kipps
-    ```
-3.  **Build the package:**
+### 1. Kipps.AI Chatbot
 
-    ```bash
-    npm install
-    npm run build
+Send messages to Kipps chatbot agents and receive contextual responses.
 
-    ```
+### 2. Kipps.AI Voice Agent
 
-4.  **Run the Docker container:**
+Initiate voice calls using Kipps voice agents.
 
-    ```bash
-    docker run -it --rm -p 5678:5678 `
-    -v "${env:USERPROFILE}\.n8n:/home/node/.n8n" `
-    -v "${PWD}:/home/node/.n8n/custom" `  -e N8N_CUSTOM_EXTENSIONS_MODE=paths`
-    -e N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom `
-    n8nio/n8n
-    ```
+### 3. Kipps.AI WhatsApp Agent
 
-    On Linux/macOS, use:
+Send approved WhatsApp templates through agent-linked WhatsApp integrations.
 
-    ```bash
-    docker run -it --rm -p 5678:5678 \
-    -v "$HOME/.n8n:/home/node/.n8n" \
-    -v "$(pwd):/home/node/.n8n/custom" \
-    -e N8N_CUSTOM_EXTENSIONS_MODE=paths \
-    -e N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom \
-    n8nio/n8n
-    ```
+---
 
-### npm (Bare-metal or Custom Node.js install)
+# Installation
 
-1.  **Install the package:**
-    ```bash
-    npm install n8n-nodes-kipps
-    ```
-2.  **Restart your n8n instance.**
+---
 
-### Mount Instructions
+## Docker (Recommended for Local Testing)
 
-If you are running n8n in a Docker container, you can mount the nodes into your container.
+### Step 1: Clone Repository
 
-1.  **Clone this repository:**
-    ```bash
-    git clone https://github.com/KIPPS-AI/n8n-nodes-kipps.git
-    ```
-2.  **Add the following to your `docker-compose.yml` file:**
-    ```yaml
-    volumes:
-      - ./n8n-nodes-kipps:/root/.n8n/custom
-    ```
-3.  **Restart your n8n container.**
+```bash
+git clone https://github.com/KIPPS-AI/n8n-nodes-kipps.git
+cd n8n-nodes-kipps
+```
 
-## Authentication
+---
 
-To use these nodes, you will need a Kipps.AI API key.
+### Step 2: Install Dependencies
 
-1.  **Obtain your API Key:**
-    - Log in to your Kipps.AI account at [https://app.kipps.ai/](https://app.kipps.ai/).
-    - Navigate to the API settings page (you might find it under "Developers" section).
-    - Generate a new API key.
+```bash
+npm install
+```
 
-2.  **Add the Kipps.AI Credential in n8n:**
-    - In your n8n instance, go to the "Credentials" section.
-    - Click on "Add credential".
-    - Search for "Kipps AI API" and select it.
-    - Enter your API key in the credential configuration.
-    - Save the credential.
+---
 
-## Node Parameters
+### Step 3: Build Node
 
-### Kipps.AI Chatbot
+```bash
+npm run build
+```
 
-- **Agent ID**: The ID of the chatbot agent to use.
-- **Message**: The message to send to the chatbot.
-- **Session ID**: Optional Conversation ID for context management.
+---
 
-### Kipps.AI Voicebot
+### Step 4: Verify Build Output
 
-- **Action**: The action to perform.
-  - **Start Call**: Initiates a call.
-  - **Send Audio/Text**: Sends audio or text to the call.
-  - **End Call**: Ends the call.
-- **Voicebot ID**: The ID of the voicebot to use.
-- **Phone Number**: The phone number to call (required for `Start Call`).
-- **Room Name**: The room name of the call to interact with.
-- **Input Type**: The type of input to send (`Text` or `Audio`).
-- **Text Input**: The text to send to the voicebot.
-- **Audio Input**: The path to the audio file to send.
+```bash
+ls dist/nodes/KippsAi/
+```
 
-## Usage Examples
+Expected:
 
-### Kipps.AI Chatbot
+```bash
+KippsAi.node.js
+kipps-light.png
+kipps-dark.png
+```
 
-This example shows how to send a message to a Kipps.AI chatbot and receive a response.
+---
 
-1.  **Add the Kipps.AI Chatbot node to your workflow.**
-2.  **Configure the node with your Agent ID and the message you want to send.**
-3.  **Execute the workflow.**
+### Step 5: Run n8n with Docker
 
-The node will output the chatbot's response.
+## Windows PowerShell:
 
-### Kipps.AI Voicebot
+```powershell
+docker run -it --rm -p 5678:5678 `
+  -v "${PWD}:/home/node/.n8n/custom" `
+  -e N8N_CUSTOM_EXTENSIONS_MODE=paths `
+  -e N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom `
+  n8nio/n8n
+```
 
-This example shows how to initiate a call, send a message, and end the call with a Kipps.AI voicebot.
+---
 
-1.  **Start a call:**
-    - Add the Kipps.AI Voicebot node to your workflow.
-    - Set the **Action** to `Start Call`.
-    - Provide the **Voicebot ID** and the **Phone Number** to call.
-2.  **Send a message:**
-    - Add another Kipps.AI Voicebot node.
-    - Set the **Action** to `Send Audio/Text`.
-    - Provide the **Room Name** from the previous step.
-    - Set the **Input Type** to `Text` and enter your message.
-3.  **End the call:**
-    - Add a final Kipps.AI Voicebot node.
-    - Set the **Action** to `End Call`.
-    - Provide the **Room Name**.
+## Windows CMD:
 
-## Troubleshooting
+```cmd
+docker run -it --rm -p 5678:5678 -v "%cd%:/home/node/.n8n/custom" -e N8N_CUSTOM_EXTENSIONS_MODE=paths -e N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom n8nio/n8n
+```
 
-- **401 Unauthorized**: Make sure your API key is correct and has the necessary permissions.
-- **404 Not Found**: Double-check the Agent ID or Voicebot ID.
-- **Network Errors**: Ensure that your n8n instance can reach the Kipps.AI API (`https://backend.kipps.ai`).
-- **Credential Mistakes**: Verify that you have created a Kipps.AI API credential and selected it in the node.
+---
+
+## Linux/macOS:
+
+```bash
+docker run -it --rm -p 5678:5678 \
+  -v "$(pwd):/home/node/.n8n/custom" \
+  -e N8N_CUSTOM_EXTENSIONS_MODE=paths \
+  -e N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom \
+  n8nio/n8n
+```
+
+---
+
+### Step 6: Open n8n
+
+```txt
+http://localhost:5678
+```
+
+---
+
+# Production Installation (npm)
+
+```bash
+npm install n8n-nodes-kipps
+```
+
+Restart n8n after installation.
+
+---
+
+# Docker Compose Mount
+
+```yaml
+volumes:
+  - ./n8n-nodes-kipps:/home/node/.n8n/custom
+```
+
+---
+
+# Authentication Setup
+
+Kipps.AI nodes require valid API authentication.
+
+## Credential Fields
+
+### Required:
+
+* API Key / Bearer Token
+* Allowed HTTP Request Domains
+
+### Recommended Domain:
+
+```txt
+backend.kipps.ai
+```
+
+For local backend testing:
+
+```txt
+host.docker.internal
+```
+
+---
+
+# Node Types and Parameters
+
+---
+
+# Kipps.AI Chatbot
+
+### Parameters:
+
+* **Agent ID** — Chatbot UUID
+* **Message** — User input
+* **Session ID** — Optional conversation continuity
+
+---
+
+# Kipps.AI Voice Agent
+
+### Parameters:
+
+* **Voicebot ID**
+* **Phone Number**
+* **Room Name**
+
+---
+
+# Kipps.AI WhatsApp Agent
+
+### Parameters:
+
+* **WhatsApp Agent UUID**
+* **Recipient Number**
+* **Template Name**
+* **Template Parameters**
+
+---
+
+# WhatsApp Template Architecture
+
+## Template Fetch Endpoint:
+
+```http
+GET /integrations/get-whatsapp-templates/
+```
+
+### Requirements:
+
+* Authenticated organization
+* API key / bearer token
+
+---
+
+## Send Template Endpoint:
+
+```http
+POST /integrations/whatsapp-agent/send-template/
+```
+
+### Required Payload:
+
+```json
+{
+  "agent_uuid": "...",
+  "to": "+1234567890",
+  "template_name": "hello_world",
+  "parameters": {}
+}
+```
+
+---
+
+# Local Development Notes
+
+If testing against local Django backend:
+
+### Base URL:
+
+```txt
+http://host.docker.internal:8000
+```
+
+---
+
+### Django Run Command:
+
+```bash
+python manage.py runserver 0.0.0.0:8000
+```
+
+---
+
+### Local Auth Options:
+
+#### Option A:
+
+Use valid local bearer token
+
+#### Option B:
+
+Temporarily disable:
+
+```py
+permission_classes = []
+```
+
+---
+
+# Common Issues
+
+---
+
+## Node Not Appearing
+
+### Causes:
+
+* Build failure
+* Wrong mount path
+* Missing package.json config
+
+### Fix:
+
+```bash
+npm run build
+```
+
+---
+
+## Broken Icon
+
+### Causes:
+
+* Missing icon files
+* Wrong filenames
+
+### Required:
+
+```txt
+kipps-light.png
+kipps-dark.png
+```
+
+---
+
+## Template Dropdown Not Loading
+
+### Causes:
+
+* Invalid API key
+* Wrong backend URL
+* Missing auth
+* Stale Docker build
+
+### Fix:
+
+* Verify credentials
+* Rebuild
+* Restart container
+
+---
+
+## Docker Errors
+
+### Port already allocated:
+
+```bash
+docker ps
+docker stop <container_id>
+```
+
+---
+
+### Permission denied scanning host:
+
+Mount correct project directory only.
+
+---
+
+# Build Commands
+
+```bash
+npm install
+npm run build
+```
+
+---
+
+# Publish to npm
+
+```bash
+npm login
+npm publish
+```
+
+---
+
+# Recommended Testing Flow
+
+## Before production:
+
+### Verify:
+
+* Chatbot node
+* Voice node
+* WhatsApp node
+* Template dropdown
+* Template parameter mapper
+* Credential auth
+* Docker loading
+* Icon rendering
+
+---
+
+# Support
+
+## Kipps Platform:
+
+```txt
+https://app.kipps.ai
+```
+
+## Backend API:
+
+```txt
+https://backend.kipps.ai
+```
+
+---
+
+# Final Notes
+
+This package is designed for:
+
+* Workflow automation
+* Lead generation
+* WhatsApp campaigns
+* AI voice automation
+* Enterprise chatbot integrations
+
+For production deployment, always validate:
+
+* API credentials
+* Organization permissions
+* WhatsApp integrations
+* Template approval status
+
+---
+
+# License
+
+MIT
