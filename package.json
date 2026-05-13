@@ -1,12 +1,12 @@
 {
   "name": "n8n-nodes-kipps",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Custom Kipps.ai integration node for n8n — Chatbot, Voice Agent & WhatsApp in one node",
   "keywords": [
     "n8n-community-node-package"
   ],
   "license": "MIT",
-  "homepage": "",
+  "homepage": "https://github.com/KIPPS-AI/n8n-nodes-kipps",
   "author": {
     "name": "kipps.ai",
     "email": "tech@kipps.ai"
