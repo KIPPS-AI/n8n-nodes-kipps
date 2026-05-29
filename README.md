@@ -1,414 +1,556 @@
-# n8n-nodes-kipps
+# n8n Nodes for Kipps.AI
 
-Official Kipps.AI community node for n8n — **Chatbot**, **Voice Agent**, and **WhatsApp** in one single node.
+This package provides production-ready custom n8n nodes for integrating with the Kipps.AI platform.
 
-[![npm version](https://img.shields.io/npm/v/n8n-nodes-kipps.svg)](https://www.npmjs.com/package/n8n-nodes-kipps)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+It supports:
 
----
-
-## Table of Contents
-
-- [For End Users — How to Install](#for-end-users--how-to-install)
-- [For Developers — How to Add a New Agent Type](#for-developers--how-to-add-a-new-agent-type)
-  - [Project Structure](#project-structure)
-  - [Step 1 — Clone & Setup](#step-1--clone--setup)
-  - [Step 2 — Understand the Node Architecture](#step-2--understand-the-node-architecture)
-  - [Step 3 — Add a New Agent Type](#step-3--add-a-new-agent-type)
-  - [Step 4 — Required Fields for Every Node Property](#step-4--required-fields-for-every-node-property)
-  - [Step 5 — Add Execute Logic](#step-5--add-execute-logic)
-  - [Step 6 — Test Locally with Docker](#step-6--test-locally-with-docker)
-  - [Step 7 — Publish a New Version](#step-7--publish-a-new-version)
-- [Credentials](#credentials)
-- [Common Errors & Fixes](#common-errors--fixes)
+* **Chatbot Agents** — conversational AI workflows
+* **Voice Agents** — outbound/inbound AI voice calls
+* **WhatsApp Agents** — template messaging via WhatsApp Business
 
 ---
 
-## For End Users — How to Install
+# Features
 
-1. Open your n8n instance
-2. Go to **Settings** → **Community Nodes**
-3. Click **"Install a community node"**
-4. Enter: `n8n-nodes-kipps`
-5. Click **Install**
-6. Search **"Kipps"** in the node panel — done ✅
+## Supported Nodes
 
-> **Note:** Community nodes only work on self-hosted n8n. n8n Cloud requires admin to enable them.
+### 1. Kipps.AI Chatbot
 
----
+Send messages to Kipps chatbot agents and receive contextual responses.
 
-## For Developers — How to Add a New Agent Type
+### 2. Kipps.AI Voice Agent
 
-This guide explains everything from scratch — how the node is built, what every field means, and how to add a new agent type (e.g. a new Kipps.AI API).
+Initiate voice calls using Kipps voice agents.
 
-### Project Structure
+### 3. Kipps.AI WhatsApp Agent
 
-```
-n8n-nodes-kipps/
-├── .github/
-│   └── workflows/
-│       └── publish.yml          ← GitHub Actions auto-publish on Release
-├── credentials/
-│   └── KippsAiApi.credentials.ts  ← API Key + Base URL credential
-├── nodes/
-│   └── KippsAi/
-│       ├── KippsAi.node.ts      ← Main node (all agent types here)
-│       ├── kipps-light.svg      ← Icon for light mode
-│       └── kipps-dark.svg       ← Icon for dark mode
-├── gulpfile.js                  ← Copies SVG icons to dist/
-├── package.json                 ← npm package config
-└── tsconfig.json                ← TypeScript config
+Send approved WhatsApp templates through agent-linked WhatsApp integrations.
+
+### 4. Dynamic Agent Discovery
+
+Agents are automatically loaded from the authenticated organization.
+
+No manual UUID lookup is required.
+
+Agents are loaded using:
+
+```http
+GET /kipps/agents/
 ```
 
+and automatically filtered into:
+
+* Chatbots
+* Voice Agents
+* WhatsApp Agents
+
 ---
 
-### Step 1 — Clone & Setup
+# Installation
+
+---
+
+## Docker (Recommended for Local Testing)
+
+### Step 1: Clone Repository
 
 ```bash
 git clone https://github.com/KIPPS-AI/n8n-nodes-kipps.git
 cd n8n-nodes-kipps
+```
+
+---
+
+### Step 2: Install Dependencies
+
+```bash
 npm install
 ```
 
-Make sure you have Node.js >= 20.15 installed.
-
 ---
 
-### Step 2 — Understand the Node Architecture
-
-All agent types live in **one single file**: `nodes/KippsAi/KippsAi.node.ts`
-
-The node has 3 main sections:
-
-```
-KippsAi.node.ts
-│
-├── methods {}              ← loadOptions & resourceMapping (for dynamic dropdowns)
-│   ├── loadOptions         ← fetches data from API to populate dropdowns
-│   └── resourceMapping     ← generates dynamic form fields (e.g. WhatsApp params)
-│
-├── description {}          ← defines what the node looks like in n8n UI
-│   ├── displayName         ← node name shown in n8n
-│   ├── properties []       ← all input fields (Agent Type dropdown + per-agent fields)
-│   └── credentials []      ← which credential this node uses
-│
-└── execute()               ← actual logic that runs when node executes
-    ├── if agentType === 'chatbot' → call chatbot API
-    ├── if agentType === 'voiceAgent' → call voice API
-    └── if agentType === 'whatsapp' → call whatsapp API
-```
-
-The **"Agent Type"** dropdown at the top controls which fields are shown using `displayOptions`.
-
----
-
-### Step 3 — Add a New Agent Type
-
-Example: Adding a new **"SMS Agent"** type.
-
-#### 3a. Add option to the Agent Type dropdown
-
-Find the `agentType` property in `description.properties` and add your new option:
-
-```typescript
-{
-  displayName: 'Agent Type',
-  name: 'agentType',
-  type: 'options',
-  noDataExpression: true,
-  options: [
-    { name: 'Chatbot',     value: 'chatbot',     description: '...' },
-    { name: 'Voice Agent', value: 'voiceAgent',  description: '...' },
-    { name: 'WhatsApp',    value: 'whatsapp',    description: '...' },
-    // ✅ ADD YOUR NEW TYPE HERE:
-    { name: 'SMS Agent',   value: 'smsAgent',    description: 'Send SMS via Kipps.AI' },
-  ],
-  default: 'chatbot',
-},
-```
-
-#### 3b. Add input fields for your new agent type
-
-After the existing fields, add your new fields with `displayOptions` so they only show when your agent type is selected:
-
-```typescript
-// ── SMS AGENT fields ──────────────────────────────────────────────
-{
-  displayName: 'Phone Number',
-  name: 'smsPhoneNumber',
-  type: 'string',
-  default: '',
-  placeholder: '+911234567890',
-  description: 'Recipient phone number in E.164 format',
-  required: true,
-  displayOptions: { show: { agentType: ['smsAgent'] } },  // ← IMPORTANT
-},
-{
-  displayName: 'Message',
-  name: 'smsMessage',
-  type: 'string',
-  default: '',
-  placeholder: 'Your SMS message here',
-  description: 'The SMS message to send',
-  required: true,
-  displayOptions: { show: { agentType: ['smsAgent'] } },  // ← IMPORTANT
-},
-```
-
-> **`displayOptions`** is how you show/hide fields based on the selected agent type. Always include it or the field will show for ALL agent types.
-
-#### 3c. Add execute logic
-
-Inside the `execute()` function, add a new `else if` block:
-
-```typescript
-// ── SMS AGENT ──────────────────────────────────────────────────
-else if (agentType === 'smsAgent') {
-  const phoneNumber = this.getNodeParameter('smsPhoneNumber', i, '') as string;
-  const message = this.getNodeParameter('smsMessage', i, '') as string;
-
-  const response = await this.helpers.httpRequestWithAuthentication.call(
-    this, 'kippsAiApi',
-    {
-      method: 'POST' as IHttpRequestMethods,
-      url: `${baseUrl}/sms/send/`,       // ← your API endpoint
-      body: {
-        to_phone_number: phoneNumber,
-        message: message,
-      },
-      headers: { 'Content-Type': 'application/json' },
-    },
-  );
-
-  returnData.push({ json: response, pairedItem: i });
-}
-```
-
----
-
-### Step 4 — Required Fields for Every Node Property
-
-Every property in `description.properties` needs these fields:
-
-| Field            | Required       | Description                     | Example                                 |
-| ---------------- | -------------- | ------------------------------- | --------------------------------------- |
-| `displayName`    | ✅             | Label shown in n8n UI           | `'Phone Number'`                        |
-| `name`           | ✅             | Internal key, camelCase, unique | `'phoneNumber'`                         |
-| `type`           | ✅             | Input type (see types below)    | `'string'`                              |
-| `default`        | ✅             | Default value                   | `''`                                    |
-| `displayOptions` | ✅             | When to show this field         | `{ show: { agentType: ['smsAgent'] } }` |
-| `description`    | ⚠️ recommended | Help text shown below field     | `'Recipient number'`                    |
-| `placeholder`    | ⚠️ recommended | Placeholder text inside input   | `'+911234567890'`                       |
-| `required`       | ⚠️ optional    | Marks field as required         | `true`                                  |
-
-#### Available `type` values:
-
-| Type                | Use for                                     |
-| ------------------- | ------------------------------------------- |
-| `'string'`          | Text input                                  |
-| `'number'`          | Number input                                |
-| `'boolean'`         | Toggle on/off                               |
-| `'options'`         | Dropdown (static list)                      |
-| `'multiOptions'`    | Multi-select dropdown                       |
-| `'collection'`      | Group of optional fields (Add Field button) |
-| `'fixedCollection'` | Group of repeatable fields                  |
-| `'resourceMapper'`  | Dynamic form fields from API                |
-| `'json'`            | JSON editor                                 |
-
-#### n8n ESLint Rules to follow (or publish will fail):
-
-| Rule                        | Correct                     | Wrong               |
-| --------------------------- | --------------------------- | ------------------- |
-| Placeholder with ID         | `'session-id'`              | `'session-ID'`      |
-| Dynamic options displayName | `'Template Name or ID'`     | `'Template Name'`   |
-| Description on options type | add description             | missing description |
-| noDataExpression on options | add for top-level dropdowns | missing             |
-
-Run this to auto-fix lint errors before publishing:
-
-```bash
-npx eslint nodes credentials package.json --fix
-```
-
----
-
-### Step 5 — Add Execute Logic
-
-Inside `execute()`, always follow this pattern:
-
-```typescript
-// 1. Get parameters
-const myParam = this.getNodeParameter('myParam', i, '') as string;
-
-// 2. Call API using credentials (never hardcode API keys)
-const response = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
-	method: 'POST' as IHttpRequestMethods,
-	url: `${baseUrl}/your-endpoint/`, // baseUrl comes from credentials
-	body: { key: myParam },
-	headers: { 'Content-Type': 'application/json' },
-});
-
-// 3. Push result
-returnData.push({ json: response, pairedItem: i });
-```
-
-**Important rules:**
-
-- Always use `${baseUrl}` — never hardcode `https://backend.kipps.ai` directly. `baseUrl` comes from credentials so developers can test locally with `http://host.docker.internal:8000`
-- Always wrap in `try/catch` — already handled by the outer loop
-- Use `this.getNodeParameter('name', itemIndex, defaultValue)` — always pass `itemIndex` (the `i` variable)
-
----
-
-### Step 6 — Test Locally with Docker
-
-**Before publishing, always test locally.**
-
-#### 6a. Build the node
+### Step 3: Build Node
 
 ```bash
 npm run build
 ```
 
-Check that `dist/nodes/KippsAi/KippsAi.node.js` exists.
+---
 
-#### 6b. Start Docker Desktop
+### Step 4: Verify Build Output
 
-Make sure Docker Desktop is running (whale icon in taskbar).
+```bash
+ls dist/nodes/KippsAi/
+```
 
-#### 6c. Run n8n with your node mounted
+Expected:
 
-**Windows (PowerShell) — run from inside `n8n-nodes-kipps` folder:**
+```bash
+KippsAi.node.js
+kipps-light.png
+kipps-dark.png
+```
+
+---
+
+### Step 5: Run n8n with Docker
+
+## Windows PowerShell
 
 ```powershell
 docker run -it --rm -p 5678:5678 `
-  -v "$env:USERPROFILE\.n8n:/home/node/.n8n" `
   -v "${PWD}:/home/node/.n8n/custom" `
   -e N8N_CUSTOM_EXTENSIONS_MODE=paths `
   -e N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom `
   n8nio/n8n
 ```
 
-**Mac/Linux:**
+---
+
+## Windows CMD
+
+```cmd
+docker run -it --rm -p 5678:5678 -v "%cd%:/home/node/.n8n/custom" -e N8N_CUSTOM_EXTENSIONS_MODE=paths -e N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom n8nio/n8n
+```
+
+---
+
+## Linux/macOS
 
 ```bash
 docker run -it --rm -p 5678:5678 \
-  -v "$HOME/.n8n:/home/node/.n8n" \
   -v "$(pwd):/home/node/.n8n/custom" \
   -e N8N_CUSTOM_EXTENSIONS_MODE=paths \
   -e N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom \
   n8nio/n8n
 ```
 
-#### 6d. Open n8n
+---
 
-Go to `http://localhost:5678` → create a new workflow → search **"Kipps"**
+### Step 6: Open n8n
 
-#### 6e. Test with local backend
-
-In the **Kipps.AI API** credential, set **Base URL** to:
-
+```txt
+http://localhost:5678
 ```
+
+---
+
+# Production Installation (npm)
+
+```bash
+npm install n8n-nodes-kipps
+```
+
+Restart n8n after installation.
+
+---
+
+# Docker Compose Mount
+
+```yaml
+volumes:
+  - ./n8n-nodes-kipps:/home/node/.n8n/custom
+```
+
+---
+
+# Authentication Setup
+
+Kipps.AI nodes use API Key authentication.
+
+## Credential Fields
+
+### Required
+
+* API Key
+
+### Optional
+
+* Base URL
+
+Production:
+
+```txt
+https://backend.kipps.ai
+```
+
+Local Development:
+
+```txt
 http://host.docker.internal:8000
 ```
 
-This routes API calls to your local Django server (`python manage.py runserver`) instead of production.
+If Base URL is left empty, the node automatically uses:
 
-#### 6f. After any code change
+```txt
+https://backend.kipps.ai
+```
+
+---
+
+# Credential Verification
+
+Credential validation uses:
+
+```http
+GET /kipps/agents/
+```
+
+A successful response confirms:
+
+* API key is valid
+* Organization access is available
+* Agent discovery is working
+
+---
+
+# Node Types and Parameters
+
+---
+
+# Kipps.AI Chatbot
+
+### Parameters
+
+* **Agent Name or ID** — Automatically loaded from your organization
+* **Message** — User input
+* **Session ID** — Optional conversation continuity
+
+### APIs Used
+
+```http
+POST /v2/kipps/conversation/
+POST /v2/kipps/reply/
+```
+
+---
+
+# Kipps.AI Voice Agent
+
+### Parameters
+
+* **Voicebot Name or ID** — Automatically loaded from your organization
+* **Phone Number**
+* **Room Name**
+
+### API Used
+
+```http
+POST /speech/phone-call/
+```
+
+---
+
+# Kipps.AI WhatsApp Agent
+
+### Parameters
+
+* **WhatsApp Agent Name or ID** — Automatically loaded from your organization
+* **Recipient Number**
+* **Template Name**
+* **Template Parameters**
+
+---
+
+# WhatsApp Template Architecture
+
+## Template Fetch Endpoint
+
+```http
+GET /integrations/get-whatsapp-templates/
+```
+
+### Requirements
+
+* Authenticated organization
+* Valid API key
+
+---
+
+## Send Template Endpoint
+
+```http
+POST /integrations/whatsapp-agent/send-template/
+```
+
+### Required Payload
+
+```json
+{
+  "to": "+1234567890",
+  "template_name": "hello_world",
+  "parameters": {}
+}
+```
+
+---
+
+# Local Development Notes
+
+If testing against a local Django backend:
+
+### Base URL
+
+```txt
+http://host.docker.internal:8000
+```
+
+---
+
+### Django Run Command
+
+```bash
+python manage.py runserver 0.0.0.0:8000
+```
+
+---
+
+### Local Authentication
+
+Use a valid local API Key and configure:
+
+```txt
+Base URL = http://host.docker.internal:8000
+```
+
+---
+
+# Common Issues
+
+---
+
+## Node Not Appearing
+
+### Causes
+
+* Build failure
+* Wrong mount path
+* Missing package.json configuration
+
+### Fix
 
 ```bash
 npm run build
-# Ctrl+C the Docker container, then re-run the docker run command
 ```
 
 ---
 
-### Step 7 — Publish a New Version
+## Broken Icon
 
-Publishing is **fully automated via GitHub Actions**. Never run `npm publish` manually.
+### Causes
 
-#### 7a. Bump the version in `package.json`
+* Missing icon files
+* Wrong filenames
 
-```json
-"version": "1.0.2"
+### Required
+
+```txt
+kipps-light.png
+kipps-dark.png
 ```
 
-Follow semantic versioning:
+---
 
-- Bug fix → `1.0.1` → `1.0.2`
-- New feature (new agent type) → `1.0.1` → `1.1.0`
-- Breaking change → `1.0.1` → `2.0.0`
+## Agent Dropdown Not Loading
 
-#### 7b. Commit and push
+### Causes
+
+* Invalid API key
+* Wrong backend URL
+* Missing organization access
+* Stale Docker build
+
+### Fix
+
+* Verify credentials
+* Verify API key permissions
+* Rebuild node
+* Restart n8n container
+
+---
+
+## Template Dropdown Not Loading
+
+### Causes
+
+* Invalid WhatsApp agent
+* Missing approved templates
+* Wrong backend URL
+* Stale Docker build
+
+### Fix
+
+* Verify credentials
+* Verify WhatsApp agent configuration
+* Rebuild
+* Restart container
+
+---
+
+## Docker Errors
+
+### Port already allocated
 
 ```bash
-git add .
-git commit -m "feat: add SMS agent type"
-git push
+docker ps
+docker stop <container_id>
 ```
 
-#### 7c. Create a GitHub Release
+---
 
-1. Go to `github.com/KIPPS-AI/n8n-nodes-kipps`
-2. Click **"Releases"** → **"Create a new release"**
-3. Tag: `v1.0.2` (must match `package.json` version)
-4. Title: `v1.0.2`
-5. Click **"Publish release"**
+### Permission denied scanning host
 
-#### 7d. GitHub Actions automatically:
-
-- Installs dependencies
-- Builds the project
-- Lints the code
-- Publishes to npm **with provenance** ✅
-
-Watch progress at: `github.com/KIPPS-AI/n8n-nodes-kipps/actions`
+Mount the correct project directory only.
 
 ---
 
-## Credentials
+# Build Commands
 
-The node uses **KippsAiApi** credential with two fields:
-
-| Field    | Description                        | Default                    |
-| -------- | ---------------------------------- | -------------------------- |
-| API Key  | Kipps.AI API key from your account | —                          |
-| Base URL | Backend URL                        | `https://backend.kipps.ai` |
-
-**For local testing**, set Base URL to: `http://host.docker.internal:8000`  
-**For production**, keep it as: `https://backend.kipps.ai`
-
-Credential file: `credentials/KippsAiApi.credentials.ts`
+```bash
+npm install
+npm run build
+```
 
 ---
 
-## Common Errors & Fixes
+# Publishing to npm
 
-| Error                                                | Fix                                                      |
-| ---------------------------------------------------- | -------------------------------------------------------- |
-| `NodeConnectionTypes not exported`                   | Use `NodeConnectionType` (no `s`)                        |
-| `defaultValue does not exist in ResourceMapperField` | Remove `defaultValue` from field definition              |
-| `hideNoDataError does not exist`                     | Remove it from `resourceMapper` options                  |
-| `Use 'ID' [autofixable]`                             | Run `npx eslint nodes credentials --fix`                 |
-| `End with 'Name or ID'`                              | Dynamic options `displayName` must end with `Name or ID` |
-| `Docker daemon not running`                          | Start Docker Desktop first                               |
-| `npm 403 Forbidden`                                  | Use granular access token from npmjs.com                 |
-| `localhost:8000 not reachable from Docker`           | Use `host.docker.internal:8000` instead                  |
+### First time setup
+
+```bash
+# Login to npm
+npm login
+
+# Generate a Granular Access Token on npmjs.com:
+# Avatar → Access Tokens → Generate New Token → Granular Access Token
+# Permissions: Read and write | Packages: All packages
+
+# Set the token
+npm set //registry.npmjs.org/:_authToken YOUR_TOKEN_HERE
+```
+
+### Publish manually
+
+```bash
+npm run build
+npm publish --access public
+```
+
+### Version bumping rules
+
+Every publish needs a new version in `package.json`:
+
+| Change type | Example           | When to use               |
+| ----------- | ----------------- | ------------------------- |
+| Patch       | `1.0.0` → `1.0.1` | Bug fix, lint fix         |
+| Minor       | `1.0.0` → `1.1.0` | New agent type, new field |
+| Major       | `1.0.0` → `2.0.0` | Breaking change           |
 
 ---
 
-## Tech Stack
+## GitHub Actions — Automated Publish
 
-- **TypeScript** — node is written in TypeScript, compiled to JS
-- **n8n-workflow** — n8n's SDK for building nodes
-- **gulp** — copies SVG icons to `dist/`
-- **eslint-plugin-n8n-nodes-base** — n8n specific lint rules
-- **GitHub Actions** — automated build + publish with provenance
+After the initial setup, **never publish manually**. All publishes go through GitHub Actions for npm provenance (required for n8n verification).
+
+### How it works
+
+```
+You push code changes
+      ↓
+Update version in package.json
+      ↓
+git push to master
+      ↓
+GitHub → Releases → Create new release
+Tag: v1.0.2 (must match package.json version,always new version)
+      ↓
+GitHub Actions automatically runs:
+  - npm install
+  - npm run build
+  - npm publish --provenance
+      ↓
+npm email confirmation received ✅
+```
+
+### Setup (one time only)
+
+**1. Add NPM_TOKEN to GitHub secrets:**
+
+- Repo → Settings → Secrets and variables → Actions
+- New repository secret
+    - Name: `NPM_TOKEN`
+    - Value: your npmjs.com Granular Access Token
+
+**2. Workflow file is already in repo:**
+`.github/workflows/publish.yml`
+
+### Creating a release
+
+1. Update `version` in `package.json` (e.g. `1.0.2`)
+2. Commit and push
+3. GitHub repo → **Releases** → **Create a new release**
+4. Tag: `v1.0.2` (create new tag)
+5. Title: `v1.0.2`
+6. Click **Publish release**
+7. Watch **Actions** tab — should go green in ~2 minutes
 
 ---
 
-## Support
+# Recommended Testing Flow
 
-- Docs: [docs.kipps.ai](https://docs.kipps.ai)
-- Email: tech@kipps.ai
-- npm: [npmjs.com/package/n8n-nodes-kipps](https://www.npmjs.com/package/n8n-nodes-kipps)
+## Before Production
+
+Verify:
+
+* Credential authentication
+* Chatbot dropdown
+* Voicebot dropdown
+* WhatsApp dropdown
+* Template dropdown
+* Template parameter mapper
+* Chatbot execution
+* Voice call execution
+* WhatsApp template execution
+* Docker loading
+* Icon rendering
+
+---
+
+# Support
+
+## Kipps Platform
+
+```txt
+https://app.kipps.ai
+```
+
+## Backend API
+
+```txt
+https://backend.kipps.ai
+```
+
+---
+
+# Final Notes
+
+This package is designed for:
+
+* Workflow automation
+* Lead generation
+* WhatsApp campaigns
+* AI voice automation
+* Enterprise chatbot integrations
+
+For production deployment, always validate:
+
+* API credentials
+* Organization permissions
+* WhatsApp integrations
+* Template approval status
+
+---
+
+# License
+
+MIT
