@@ -542,55 +542,55 @@ export class KippsAi implements INodeType {
 					},
 				},
 			},
-			// {
-			// 	displayName: 'Template Components Preview Name or ID',
-			// 	name: 'templateComponentsPreview',
-			// 	type: 'options',
-			// 	default: '',
-			// 	description:
-			// 		'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-			// 	typeOptions: {
-			// 		loadOptionsDependsOn: ['whatsappAgentUuid', 'templateName'],
-			// 		loadOptionsMethod: 'getTemplateComponentsPreview',
-			// 	},
-			// 	displayOptions: { show: { agentType: ['whatsapp'] } },
-			// },
-			// {
-			// 	displayName: 'Parameters',
-			// 	name: 'mappedParameters',
-			// 	type: 'resourceMapper',
-			// 	noDataExpression: true,
-			// 	default: { mappingMode: 'defineBelow', value: {} },
-			// 	required: true,
-			// 	description:
-			// 		'Enter values for template parameters. Fields appear automatically after selecting a template. If they do not appear, click ⋮ → "Refresh fields".',
-			// 	typeOptions: {
-			// 		loadOptionsDependsOn: ['whatsappAgentUuid', 'templateName'],
-			// 		resourceMapper: {
-			// 			mode: 'map',
-			// 			resourceMapperMethod: 'getTemplateFields',
-			// 			supportAutoMap: false,
-			// 		},
-			// 	},
-			// 	displayOptions: { show: { agentType: ['whatsapp'] } },
-			// },
-			// {
-			// 	displayName: 'Additional Fields',
-			// 	name: 'additionalFields',
-			// 	type: 'collection',
-			// 	placeholder: 'Add Field',
-			// 	default: {},
-			// 	displayOptions: { show: { agentType: ['whatsapp'] } },
-			// 	options: [
-			// 		{
-			// 			displayName: 'Conversation ID',
-			// 			name: 'conversation_id',
-			// 			type: 'string',
-			// 			default: '',
-			// 			description: 'Optional Conversation ID to associate with the message',
-			// 		},
-			// 	],
-			// },
+			{
+				displayName: 'Template Components Preview Name or ID',
+				name: 'templateComponentsPreview',
+				type: 'options',
+				default: '',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				typeOptions: {
+					loadOptionsDependsOn: ['whatsappAgentUuid', 'templateName'],
+					loadOptionsMethod: 'getTemplateComponentsPreview',
+				},
+				displayOptions: { show: { agentType: ['whatsapp'] } },
+			},
+			{
+				displayName: 'Parameters',
+				name: 'mappedParameters',
+				type: 'resourceMapper',
+				noDataExpression: true,
+				default: { mappingMode: 'defineBelow', value: {} },
+				required: true,
+				description:
+					'Enter values for template parameters. Fields appear automatically after selecting a template. If they do not appear, click ⋮ → "Refresh fields".',
+				typeOptions: {
+					loadOptionsDependsOn: ['whatsappAgentUuid', 'templateName'],
+					resourceMapper: {
+						mode: 'map',
+						resourceMapperMethod: 'getTemplateFields',
+						supportAutoMap: false,
+					},
+				},
+				displayOptions: { show: { agentType: ['whatsapp'] } },
+			},
+			{
+				displayName: 'Additional Fields',
+				name: 'additionalFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				default: {},
+				displayOptions: { show: { agentType: ['whatsapp'] } },
+				options: [
+					{
+						displayName: 'Conversation ID',
+						name: 'conversation_id',
+						type: 'string',
+						default: '',
+						description: 'Optional Conversation ID to associate with the message',
+					},
+				],
+			},
 		],
 	};
 
