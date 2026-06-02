@@ -406,7 +406,7 @@ export class KippsAi implements INodeType {
 					loadOptionsMethod: 'getChatbots',
 				},
 				default: '',
-				placeholder: 'chatbot-123',
+				placeholder: 'i2oxaxxx-1ab0-xxx-xxxxxxxxxxx',
 				description:
 					'The ID(uuid) of the chatbot agent to use. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				required: true,
@@ -454,7 +454,7 @@ export class KippsAi implements INodeType {
 					loadOptionsMethod: 'getVoicebots',
 				},
 				default: '',
-				placeholder: 'example-voicebot-ID',
+				placeholder: 'kj5xxxa2-a3b0-xxx-xxxxxxxxxxx',
 				description:
 					'ID of the Kipps.AI voicebot used to start the call. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				required: true,
