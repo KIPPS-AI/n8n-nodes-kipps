@@ -34,7 +34,7 @@ export class KippsAiApi implements ICredentialType {
 
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: '={{$credentials.baseUrl || "https://backend.kipps.ai"}}',
+			baseURL: '={{ "https://backend.kipps.ai"}}',
 			url: '/kipps/agents/',
 			method: 'GET',
 		},
