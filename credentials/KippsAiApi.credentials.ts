@@ -22,18 +22,21 @@ export class KippsAiApi implements ICredentialType {
 			description: 'The API key for your Kipps.AI account.',
 		},
 	];
+
 	authenticate: IAuthenticateGeneric = {
 		type: 'generic',
 		properties: {
 			headers: {
-				'Authorization': '=Api-Key {{$credentials.apiKey}}',
+				Authorization: '=Api-Key {{$credentials.apiKey}}',
 			},
 		},
 	};
 
 	test: ICredentialTestRequest = {
 		request: {
-			url: 'https://backend.kipps.ai/test/',
+			baseURL: '={{$credentials.baseUrl || "https://backend.kipps.ai"}}',
+			url: '/kipps/agents/',
+			method: 'GET',
 		},
 	};
 }

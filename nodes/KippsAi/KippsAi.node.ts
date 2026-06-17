@@ -16,7 +16,13 @@ import {
 // ─── WhatsApp Template Cache ──────────────────────────────────────────────────
 
 const TEMPLATES_CACHE_TTL_MS = 5 * 60 * 1000;
-type KippsApiCredentials = { bearerToken?: string; organizationId?: string };
+
+type KippsApiCredentials = {
+	apiKey?: string;
+	organizationId?: string;
+	baseUrl?: string;
+};
+
 type TemplatesCache = Map<string, { data: unknown[]; ts: number }>;
 
 async function getTemplatesCached(
@@ -33,10 +39,12 @@ async function getTemplatesCached(
 }
 
 function getTemplatesCacheKey(creds: KippsApiCredentials | undefined, agentUuid?: string): string {
-	return `${creds?.organizationId ?? ''}:${creds?.bearerToken ?? ''}:${agentUuid ?? ''}`;
+	return `${creds?.organizationId ?? ''}:${creds?.apiKey ?? ''}:${agentUuid ?? ''}`;
 }
 
-// ─── Node Class ───────────────────────────────────────────────────────────────
+function getBaseUrl(creds: KippsApiCredentials | undefined): string {
+	return (creds?.baseUrl ?? 'https://backend.kipps.ai').replace(/\/$/, '');
+}
 
 export class KippsAi implements INodeType {
 	usableAsTool = true;
@@ -49,12 +57,13 @@ export class KippsAi implements INodeType {
 			cache: TemplatesCache,
 		): Promise<Array<{ name?: string; components?: unknown; status?: string }>> {
 			const creds = (await ctx.getCredentials('kippsAiApi')) as KippsApiCredentials | undefined;
+			const baseUrl = getBaseUrl(creds);
 			const agentUuid = ctx.getCurrentNodeParameter('whatsappAgentUuid') as string;
 			const cacheKey = getTemplatesCacheKey(creds, agentUuid);
 			return (await getTemplatesCached(cache, cacheKey, async () => {
 				const res = await ctx.helpers.httpRequestWithAuthentication.call(ctx, 'kippsAiApi', {
 					method: 'GET',
-					url: `https://backend.kipps.ai/integrations/get-whatsapp-templates/?whatsapp_agent_id=${agentUuid}`,
+					url: `${baseUrl}/integrations/get-whatsapp-templates/?whatsapp_agent_id=${agentUuid}`,
 				});
 				const list = Array.isArray(res) ? res : [];
 				return list.filter((t) => (t as { status?: string }).status === 'APPROVED');
@@ -63,6 +72,99 @@ export class KippsAi implements INodeType {
 
 		return {
 			loadOptions: {
+				async getChatbots(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+					try {
+						const creds = (await this.getCredentials('kippsAiApi')) as
+							| KippsApiCredentials
+							| undefined;
+
+						const baseUrl = getBaseUrl(creds);
+
+						const res = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
+							method: 'GET',
+							url: `${baseUrl}/kipps/agents/`,
+						});
+
+						const list = Array.isArray(res) ? res : (res?.results ?? res?.data ?? []);
+
+						return list
+							.filter((a: { agent_type?: string }) => a.agent_type === 'chatbot')
+							.map((a: { id?: string; name?: string }) => ({
+								name: String(a.name ?? a.id),
+								value: String(a.id),
+							}));
+					} catch {
+						return [
+							{
+								name: 'Could Not Load Chatbots',
+								value: '',
+							},
+						];
+					}
+				},
+
+				async getVoicebots(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+					try {
+						const creds = (await this.getCredentials('kippsAiApi')) as
+							| KippsApiCredentials
+							| undefined;
+
+						const baseUrl = getBaseUrl(creds);
+
+						const res = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
+							method: 'GET',
+							url: `${baseUrl}/kipps/agents/`,
+						});
+
+						const list = Array.isArray(res) ? res : (res?.results ?? res?.data ?? []);
+
+						return list
+							.filter((a: { agent_type?: string }) => a.agent_type === 'voicebot')
+							.map((a: { id?: string; name?: string }) => ({
+								name: String(a.name ?? a.id),
+								value: String(a.id),
+							}));
+					} catch {
+						return [
+							{
+								name: 'Could Not Load Voicebots',
+								value: '',
+							},
+						];
+					}
+				},
+
+				async getWhatsappAgents(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+					try {
+						const creds = (await this.getCredentials('kippsAiApi')) as
+							| KippsApiCredentials
+							| undefined;
+
+						const baseUrl = getBaseUrl(creds);
+
+						const res = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
+							method: 'GET',
+							url: `${baseUrl}/kipps/agents/`,
+						});
+
+						const list = Array.isArray(res) ? res : (res?.results ?? res?.data ?? []);
+
+						return list
+							.filter((a: { agent_type?: string }) => a.agent_type === 'whatsapp')
+							.map((a: { id?: string; name?: string }) => ({
+								name: String(a.name ?? a.id),
+								value: String(a.id),
+							}));
+					} catch {
+						return [
+							{
+								name: 'Could Not Load WhatsApp Agents',
+								value: '',
+							},
+						];
+					}
+				},
+
 				async getTemplates(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 					const templates = await fetchApprovedTemplates(this, templatesCacheUi);
 					return templates.map((t) => ({
@@ -297,14 +399,22 @@ export class KippsAi implements INodeType {
 
 			// ── CHATBOT fields ─────────────────────────────────────────────────
 			{
-				displayName: 'Agent ID',
+				displayName: 'Agent Name or ID',
 				name: 'agentId',
-				type: 'string',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getChatbots',
+				},
 				default: '',
-				placeholder: 'chatbot-123',
-				description: 'The ID of the chatbot agent to use',
+				placeholder: 'i2oxaxxx-1ab0-xxx-xxxxxxxxxxx',
+				description:
+					'The ID(uuid) of the chatbot agent to use. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				required: true,
-				displayOptions: { show: { agentType: ['chatbot'] } },
+				displayOptions: {
+					show: {
+						agentType: ['chatbot'],
+					},
+				},
 			},
 			{
 				displayName: 'Message',
@@ -314,7 +424,11 @@ export class KippsAi implements INodeType {
 				placeholder: 'Hello, tell me about your features.',
 				description: 'The message to send to the chatbot',
 				required: true,
-				displayOptions: { show: { agentType: ['chatbot'] } },
+				displayOptions: {
+					show: {
+						agentType: ['chatbot'],
+					},
+				},
 			},
 			{
 				displayName: 'Session ID',
@@ -324,19 +438,31 @@ export class KippsAi implements INodeType {
 				placeholder: 'optional-session-ID',
 				description:
 					'Optional ID to maintain conversation context. Leave empty to create a new session.',
-				displayOptions: { show: { agentType: ['chatbot'] } },
+				displayOptions: {
+					show: {
+						agentType: ['chatbot'],
+					},
+				},
 			},
 
 			// ── VOICE AGENT fields ─────────────────────────────────────────────
 			{
-				displayName: 'Voicebot ID',
+				displayName: 'Voicebot Name or ID',
 				name: 'voicebotId',
-				type: 'string',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getVoicebots',
+				},
 				default: '',
-				placeholder: 'example-voicebot-ID',
-				description: 'ID of the Kipps.AI voicebot used to start the call',
+				placeholder: 'kj5xxxa2-a3b0-xxx-xxxxxxxxxxx',
+				description:
+					'ID of the Kipps.AI voicebot used to start the call. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 				required: true,
-				displayOptions: { show: { agentType: ['voiceAgent'] } },
+				displayOptions: {
+					show: {
+						agentType: ['voiceAgent'],
+					},
+				},
 			},
 			{
 				displayName: 'Phone Number',
@@ -346,7 +472,11 @@ export class KippsAi implements INodeType {
 				placeholder: '+911234567890',
 				description: 'Destination phone number in E.164 format',
 				required: true,
-				displayOptions: { show: { agentType: ['voiceAgent'] } },
+				displayOptions: {
+					show: {
+						agentType: ['voiceAgent'],
+					},
+				},
 			},
 			{
 				displayName: 'Room Name',
@@ -356,19 +486,29 @@ export class KippsAi implements INodeType {
 				placeholder: 'call-123',
 				description: 'Unique room name for the phone call session',
 				required: true,
-				displayOptions: { show: { agentType: ['voiceAgent'] } },
+				displayOptions: {
+					show: {
+						agentType: ['voiceAgent'],
+					},
+				},
 			},
 
 			// ── WHATSAPP fields ────────────────────────────────────────────────
 			{
-				displayName: 'WhatsApp Agent UUID',
+				displayName: 'WhatsApp Agent UUID Name or ID',
 				name: 'whatsappAgentUuid',
-				type: 'string',
+				type: 'options',
+				typeOptions: { loadOptionsMethod: 'getWhatsappAgents' },
 				required: true,
 				default: '',
 				placeholder: 'a5xxxxx-2cb0-xxx-xxxxxxxxxxx',
-				description: 'WhatsApp agent UUID used to fetch templates',
-				displayOptions: { show: { agentType: ['whatsapp'] } },
+				description:
+					'WhatsApp agent UUID used to fetch templates. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				displayOptions: {
+					show: {
+						agentType: ['whatsapp'],
+					},
+				},
 			},
 			{
 				displayName: 'To',
@@ -378,7 +518,11 @@ export class KippsAi implements INodeType {
 				default: '',
 				placeholder: '+1234567890',
 				description: 'Recipient WhatsApp number in international format (e.g. +1234567890)',
-				displayOptions: { show: { agentType: ['whatsapp'] } },
+				displayOptions: {
+					show: {
+						agentType: ['whatsapp'],
+					},
+				},
 			},
 			{
 				displayName: 'Template Name or ID',
@@ -392,7 +536,11 @@ export class KippsAi implements INodeType {
 					loadOptionsDependsOn: ['whatsappAgentUuid'],
 					loadOptionsMethod: 'getTemplates',
 				},
-				displayOptions: { show: { agentType: ['whatsapp'] } },
+				displayOptions: {
+					show: {
+						agentType: ['whatsapp'],
+					},
+				},
 			},
 			{
 				displayName: 'Template Components Preview Name or ID',
@@ -453,7 +601,8 @@ export class KippsAi implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 		const agentType = this.getNodeParameter('agentType', 0) as string;
 		const headers = { 'Content-Type': 'application/json' };
-
+		const creds = (await this.getCredentials('kippsAiApi')) as KippsApiCredentials | undefined;
+		const baseUrl = getBaseUrl(creds);
 		// Pre-fetch WhatsApp templates once for the whole execution run
 		const templatesCacheRun: TemplatesCache = new Map();
 		let whatsappTemplates: unknown[] = [];
@@ -466,7 +615,7 @@ export class KippsAi implements INodeType {
 				whatsappTemplates = await getTemplatesCached(templatesCacheRun, cacheKey, async () => {
 					const res = await this.helpers.httpRequestWithAuthentication.call(this, 'kippsAiApi', {
 						method: 'GET',
-						url: `https://backend.kipps.ai/integrations/get-whatsapp-templates/?whatsapp_agent_id=${agentUuid}`,
+						url: `${baseUrl}/integrations/get-whatsapp-templates/?whatsapp_agent_id=${agentUuid}`,
 					});
 					const list = Array.isArray(res) ? res : [];
 					return list.filter((t) => (t as { status?: string }).status === 'APPROVED');
@@ -492,7 +641,7 @@ export class KippsAi implements INodeType {
 							'kippsAiApi',
 							{
 								method: 'POST' as IHttpRequestMethods,
-								url: 'https://backend.kipps.ai/v2/kipps/conversation/',
+								url: `${baseUrl}/v2/kipps/conversation/`,
 								body: { chatbot_id: agentId },
 								headers,
 							},
@@ -505,7 +654,7 @@ export class KippsAi implements INodeType {
 						'kippsAiApi',
 						{
 							method: 'POST' as IHttpRequestMethods,
-							url: 'https://backend.kipps.ai/v2/kipps/reply/',
+							url: `${baseUrl}/v2/kipps/reply/`,
 							body: { message, chatbot_id: agentId, conversation_id: session },
 							headers,
 						},
@@ -535,7 +684,7 @@ export class KippsAi implements INodeType {
 						'kippsAiApi',
 						{
 							method: 'POST' as IHttpRequestMethods,
-							url: 'https://backend.kipps.ai/speech/phone-call/',
+							url: `${baseUrl}/speech/phone-call/`,
 							body,
 							headers,
 						},
@@ -575,11 +724,10 @@ export class KippsAi implements INodeType {
 						);
 					}
 
-					const mapped = this.getNodeParameter('mappedParameters', i) as {
-						value: Record<string, unknown>;
-					};
-					const values = mapped?.value || {};
-
+					// const mapped = this.getNodeParameter('mappedParameters', i) as {
+					// 	value: Record<string, unknown>;
+					// };
+					const values: Record<string, unknown> = {};
 					const empty = Object.entries(values)
 						.filter(([, v]) => v === undefined || v === null || v === '')
 						.map(([k]) => k);
@@ -631,7 +779,7 @@ export class KippsAi implements INodeType {
 						'kippsAiApi',
 						{
 							method: 'POST' as IHttpRequestMethods,
-							url: 'https://backend.kipps.ai/integrations/whatsapp-agent/send-template/',
+							url: `${baseUrl}/integrations/whatsapp-agent/send-template/`,
 							body: requestBody,
 							headers,
 						},
